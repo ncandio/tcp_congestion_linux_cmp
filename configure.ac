@@ -1,6 +1,6 @@
 # filepath: /home/nico/WORK_ROOT/tcp_congestion_linux_cmp/configure.ac
 AC_INIT([TCP Congestion Policies Comparison], [1.0], [your.email@example.com])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_INSTALL
