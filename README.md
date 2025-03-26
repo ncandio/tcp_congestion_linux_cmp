@@ -12,16 +12,17 @@ impacts throughput, latency, and overall network performance. In particular the 
 ## Checking Current Algorithm
 To check which algorithm is currently active:
 
-'''
+```
 sysctl net.ipv4.tcp_congestion_control
-'''
+```
 
 ## Changing the Algorithm
 To change to a different algorithm (for example, TCP Brutal):
 
-'''
+```
 sudo sysctl -w net.ipv4.tcp_congestion_control=brutal
-'''
+```
+
 You can replace brutal with any algorithm listed in the available algorithms output.
 
 ## Results
