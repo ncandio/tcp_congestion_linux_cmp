@@ -28,3 +28,8 @@ You can replace brutal with any algorithm listed in the available algorithms out
 ## Results
 
 ## How to start an emulated / simulated flow 
+
+## References
+
+Hysteria / TCP brutal
+https://github.com/apernet/tcp-brutal 
