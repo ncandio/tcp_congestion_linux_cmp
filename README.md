@@ -29,6 +29,35 @@ You can replace brutal with any algorithm listed in the available algorithms out
 
 ## How to start an emulated / simulated flow 
 
+After cloning and building this repo, go in the bin folder and launch the application. Depending
+on your configuration and Linux box , you will see the test run
+
+```
+Available congestion control algorithms:
+- reno
+- cubic
+- brutal
+Set congestion control to: cubic
+Testing cubic...
+Running test with cubic (Bandwidth: 10 Mbps, Latency: 5 ms)
+Server initialized on port 5000
+Client connected to server
+Applied network conditions: 10 Mbps, 5 ms latency
+Running test with cubic (Bandwidth: 50 Mbps, Latency: 20 ms)
+Client connected to server
+Applied network conditions: 50 Mbps, 20 ms latency
+Running test with cubic (Bandwidth: 100 Mbps, Latency: 100 ms)
+Client connected to server
+Applied network conditions: 100 Mbps, 100 ms latency
+Algorithm bbr not available
+Set congestion control to: reno
+Testing reno...
+Running test with reno (Bandwidth: 10 Mbps, Latency: 5 ms)
+Client connected to server
+Applied network conditions: 10 Mbps, 5 ms latency
+Running test with reno (Bandwidth: 50 Mbps, Latency: 20 ms)
+```
+
 ## References
 
 Hysteria / TCP brutal
