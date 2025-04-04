@@ -68,6 +68,7 @@ install(FILES
     DESTINATION share/doc/${PROJECT_NAME}
 )
 
+# Fix this error -- error in the build here in the next 8 lines
 # Check for eBPF dependencies during build
 add_custom_target(check_ebpf_deps ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Checking for eBPF dependencies..."
