@@ -26,9 +26,11 @@ impacts throughput, latency, and overall network performance. In particular, the
 - Linux kernel 4.9+ (5.0+ recommended)
 - C++17 compatible compiler
 - CMake 3.10+
-- For eBPF support (optional but recommended):
+- **Required for eBPF metrics collection**:
   - BCC tools: `sudo apt-get install bpfcc-tools python3-bpfcc`
   - Python 3 with pandas: `pip3 install pandas`
+
+> **Important**: To build and run the eBPF components, you must install BCC tools with: `sudo apt-get install bpfcc-tools python3-bpfcc`
 
 ### Building
 

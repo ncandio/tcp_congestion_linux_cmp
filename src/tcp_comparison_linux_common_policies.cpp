@@ -13,7 +13,7 @@
 #include <sstream>
 
 // Define EBPF feature flag
-#if defined(HAVE_BCC)
+#if defined(ENABLE_EBPF_METRICS)
   #define USE_EBPF_METRICS 1
 #else
   #define USE_EBPF_METRICS 0

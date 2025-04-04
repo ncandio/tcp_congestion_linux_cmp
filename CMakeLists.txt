@@ -15,16 +15,49 @@ add_compile_options(-Wall -Wextra -pedantic)
 # Set optimization level (Release builds will have -O2 or equivalent)
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
-# Find BCC (if available)
+# Initialize eBPF support flag
+set(ENABLE_EBPF_METRICS OFF)
+
+# Check for all required eBPF dependencies
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
     pkg_check_modules(BCC QUIET libbcc)
-    if(BCC_FOUND)
+    
+    # Check for Python3
+    execute_process(
+        COMMAND bash -c "command -v python3"
+        OUTPUT_VARIABLE PYTHON3_PATH
+        RESULT_VARIABLE PYTHON3_RESULT
+        ERROR_QUIET
+    )
+    
+    # Check for pandas
+    execute_process(
+        COMMAND bash -c "python3 -c 'import pandas'"
+        RESULT_VARIABLE PANDAS_RESULT
+        ERROR_QUIET
+    )
+    
+    # Enable eBPF if all dependencies are present
+    if(BCC_FOUND AND PYTHON3_RESULT EQUAL 0 AND PANDAS_RESULT EQUAL 0)
+        set(ENABLE_EBPF_METRICS ON)
         add_definitions(-DHAVE_BCC)
-        message(STATUS "BCC found - eBPF support enabled")
+        add_definitions(-DENABLE_EBPF_METRICS)
+        message(STATUS "eBPF support fully enabled - all dependencies found")
     else()
-        message(STATUS "BCC not found - eBPF support will be limited")
+        message(STATUS "eBPF support disabled - missing dependencies:")
+        if(NOT BCC_FOUND)
+            message(STATUS "  - BCC not found. Install with: sudo apt-get install bpfcc-tools python3-bpfcc")
+        endif()
+        if(NOT PYTHON3_RESULT EQUAL 0)
+            message(STATUS "  - Python3 not found")
+        endif()
+        if(NOT PANDAS_RESULT EQUAL 0)
+            message(STATUS "  - pandas Python module not found. Install with: pip3 install pandas")
+        endif()
     endif()
+else()
+    message(STATUS "PkgConfig not found - eBPF support will be disabled")
 endif()
 
 # Define directories
@@ -68,14 +101,13 @@ install(FILES
     DESTINATION share/doc/${PROJECT_NAME}
 )
 
-# Fix this error -- error in the build here in the next 8 lines
-# Check for eBPF dependencies during build
-add_custom_target(check_ebpf_deps ALL
-    COMMAND ${CMAKE_COMMAND} -E echo "Checking for eBPF dependencies..."
-    COMMAND bash -c "command -v python3 >/dev/null 2>&1 || echo 'WARNING: python3 not found, eBPF metrics collection will not work'"
-    COMMAND bash -c "python3 -c 'import pandas 2>/dev/null' || echo 'WARNING: pandas not found, install with: pip3 install pandas'"
-    COMMAND bash -c "[ -d /usr/include/bcc ] || echo 'WARNING: BCC headers not found, eBPF metrics collection will not work. Install with: sudo apt-get install bpfcc-tools python3-bpfcc'"
-)
+# Summary of eBPF support status
+if(ENABLE_EBPF_METRICS)
+    message(STATUS "eBPF metrics collection: ENABLED")
+else()
+    message(STATUS "eBPF metrics collection: DISABLED")
+    message(STATUS "Install all dependencies with: sudo apt-get install bpfcc-tools python3-bpfcc && pip3 install pandas")
+endif()
 
 # Output information for debugging
 message(STATUS "Source files: ${SRC_FILES}")
