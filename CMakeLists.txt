@@ -15,55 +15,25 @@ add_compile_options(-Wall -Wextra -pedantic)
 # Set optimization level (Release builds will have -O2 or equivalent)
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
-# Initialize eBPF support flag
-set(ENABLE_EBPF_METRICS OFF)
+# Setup module path
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
-# Check for all required eBPF dependencies
-find_package(PkgConfig QUIET)
-if(PkgConfig_FOUND)
-    pkg_check_modules(BCC QUIET libbcc)
-    
-    # Check for Python3
-    execute_process(
-        COMMAND bash -c "command -v python3"
-        OUTPUT_VARIABLE PYTHON3_PATH
-        RESULT_VARIABLE PYTHON3_RESULT
-        ERROR_QUIET
-    )
-    
-    # Check for pandas
-    execute_process(
-        COMMAND bash -c "python3 -c 'import pandas'"
-        RESULT_VARIABLE PANDAS_RESULT
-        ERROR_QUIET
-    )
-    
-    # Enable eBPF if all dependencies are present
-    if(BCC_FOUND AND PYTHON3_RESULT EQUAL 0 AND PANDAS_RESULT EQUAL 0)
-        set(ENABLE_EBPF_METRICS ON)
-        add_definitions(-DHAVE_BCC)
-        add_definitions(-DENABLE_EBPF_METRICS)
-        message(STATUS "eBPF support fully enabled - all dependencies found")
-    else()
-        message(STATUS "eBPF support disabled - missing dependencies:")
-        if(NOT BCC_FOUND)
-            message(STATUS "  - BCC not found. Install with: sudo apt-get install bpfcc-tools python3-bpfcc")
-        endif()
-        if(NOT PYTHON3_RESULT EQUAL 0)
-            message(STATUS "  - Python3 not found")
-        endif()
-        if(NOT PANDAS_RESULT EQUAL 0)
-            message(STATUS "  - pandas Python module not found. Install with: pip3 install pandas")
-        endif()
-    endif()
-else()
-    message(STATUS "PkgConfig not found - eBPF support will be disabled")
-endif()
+# Set up eBPF support
+include(SetupBPF)
 
 # Define directories
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
+
+# Check for local bcc installation as git submodule
+set(BCC_SUBMODULE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/bcc")
+if(EXISTS "${BCC_SUBMODULE_DIR}/src/cc/libbcc.h" AND NOT BCC_FOUND)
+    message(STATUS "Found BCC submodule, will use it for include paths")
+    set(BCC_INCLUDE_DIRS "${BCC_SUBMODULE_DIR}/src")
+    add_subdirectory(${BCC_SUBMODULE_DIR} EXCLUDE_FROM_ALL)
+    set(HAVE_BCC_SUBMODULE TRUE)
+endif()
 
 # Set output directories for all builds
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
@@ -77,10 +47,14 @@ add_executable(tcp_comparison_linux ${SRC_FILES})
 # Set include directories
 target_include_directories(tcp_comparison_linux PRIVATE ${INCLUDE_DIR})
 
-# Optional: Add specific libraries if needed
-if(BCC_FOUND)
+# Add BCC support to the target
+if(EBPF_SUPPORT_AVAILABLE)
+    add_ebpf_target(tcp_comparison_linux)
+elseif(HAVE_BCC_SUBMODULE)
     target_include_directories(tcp_comparison_linux PRIVATE ${BCC_INCLUDE_DIRS})
-    target_link_libraries(tcp_comparison_linux PRIVATE ${BCC_LIBRARIES})
+    target_link_libraries(tcp_comparison_linux PRIVATE bcc-shared)
+    add_definitions(-DHAVE_BCC -DENABLE_EBPF_METRICS)
+    message(STATUS "Using BCC from submodule")
 endif()
 
 # Install rules
@@ -100,14 +74,6 @@ install(FILES
     ${SRC_DIR}/README_EBPF.md
     DESTINATION share/doc/${PROJECT_NAME}
 )
-
-# Summary of eBPF support status
-if(ENABLE_EBPF_METRICS)
-    message(STATUS "eBPF metrics collection: ENABLED")
-else()
-    message(STATUS "eBPF metrics collection: DISABLED")
-    message(STATUS "Install all dependencies with: sudo apt-get install bpfcc-tools python3-bpfcc && pip3 install pandas")
-endif()
 
 # Output information for debugging
 message(STATUS "Source files: ${SRC_FILES}")

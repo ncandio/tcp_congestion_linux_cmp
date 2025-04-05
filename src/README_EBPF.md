@@ -27,16 +27,51 @@ These metrics are collected in real-time during TCP congestion control tests.
 To use the eBPF integration, you need:
 
 1. Linux kernel 4.9+ (5.0+ recommended)
-2. BCC tools installed:
+2. BCC (BPF Compiler Collection) - you have two options:
 
-```
-sudo apt-get install bpfcc-tools python3-bpfcc
+   **Option 1**: Install BCC from system packages:
+   ```bash
+   sudo apt-get install bpfcc-tools python3-bpfcc
+   ```
+
+   **Option 2**: Use the BCC git submodule (recommended for development):
+   ```bash
+   # Clone with the BCC submodule
+   git clone --recurse-submodules https://your-repo-url.git
+   
+   # Or if already cloned, initialize the submodule
+   git submodule update --init --recursive
+   
+   # Build the BCC submodule
+   ./build_bcc_submodule.sh
+   ```
+
+3. Linux kernel headers for your running kernel:
+   ```bash
+   sudo apt-get install linux-headers-$(uname -r)
+   ```
+
+4. Python dependencies:
+   ```bash
+   pip install pandas
+   ```
+
+## Building with eBPF Support
+
+To build the project with eBPF support:
+
+```bash
+# Create a build directory
+mkdir -p build && cd build
+
+# Configure with eBPF support
+cmake .. -DENABLE_EBPF_METRICS=ON
+
+# Build
+make
 ```
 
-3. Python dependencies:
-```
-pip install pandas
-```
+The build system will automatically detect if you have BCC installed system-wide or as a git submodule.
 
 ## How It Works
 
@@ -51,7 +86,7 @@ pip install pandas
 
 You can also run the eBPF collector independently:
 
-```
+```bash
 python3 ./src/tcp_ebpf_collector.py --algorithm=cubic --duration=60 --output=my_metrics.csv
 ```
 
@@ -86,5 +121,37 @@ If you encounter issues:
 1. Ensure you're running with sufficient privileges: `sudo ./tcp_test`
 2. Check kernel headers are installed: `sudo apt-get install linux-headers-$(uname -r)`
 3. Verify BCC is working: `sudo python3 -c "from bcc import BPF; print('BCC working')"`
+4. If using the BCC submodule, make sure it was properly built: `./build_bcc_submodule.sh`
+5. If CMake cannot find BCC, try specifying the path manually:
+   ```bash
+   cmake .. -DENABLE_EBPF_METRICS=ON -DBCC_INCLUDE_DIRS=/path/to/bcc/include -DBCC_LIBRARIES=/path/to/bcc/lib/libbcc.so
+   ```
+6. If you encounter missing libbcc.so errors when running:
+   ```
+   error while loading shared libraries: libbcc.so.0: cannot open shared object file: No such file or directory
+   ```
+   Try: `sudo ldconfig` or specify the library path: `LD_LIBRARY_PATH=/path/to/bcc/lib sudo ./tcp_test`
+
+7. If BCC build fails with LLVM errors:
+   ```bash
+   sudo apt-get install llvm-dev libclang-dev
+   ```
+
+8. For Python import errors:
+   ```bash
+   # Check if bcc module is installed correctly
+   sudo python3 -m pip install bcc
+   ```
+   
+9. If the build system can't find the minimal headers, try:
+   ```bash
+   # Set environment variable to point to the headers
+   export BCC_INCLUDE_DIR=/full/path/to/bcc_minimal/include
+   ```
+   
+10. For "Failed to load BPF program" errors, check:
+    - You have the correct kernel headers installed
+    - Check syslog for details: `sudo dmesg | tail -30`
+    - Verify program permission issues: `sudo cat /sys/kernel/debug/tracing/trace_pipe`
 
 For more advanced eBPF usage, refer to the [BCC documentation](https://github.com/iovisor/bcc).
