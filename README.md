@@ -129,3 +129,8 @@ For details on the eBPF integration, see [README_EBPF.md](src/README_EBPF.md).
 - [TCP Brutal](https://github.com/apernet/tcp-brutal) - Implementation of the Brutal congestion control algorithm
 - [BCC Tools](https://github.com/iovisor/bcc) - Tools for BPF Compiler Collection
 - [Linux TCP Implementation](https://github.com/torvalds/linux/tree/master/net/ipv4)
+
+## Just for Fun
+
+If you enjoy tech humor, check out this hilarious parody about networking protocols by Krazam:
+- [If TCP/IP was a video call](https://www.youtube.com/watch?v=NAkAMDeo_NM)
