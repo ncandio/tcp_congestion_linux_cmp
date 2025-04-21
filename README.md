@@ -36,24 +36,26 @@ impacts throughput, latency, and overall network performance. In particular, the
 
 #### Standard Build
 ```bash
-mkdir build && cd build
-cmake ..
+mkdir -p build && cd build
+cmake -B. -S..
 make
 ```
 
 #### Build with eBPF Support
 ```bash
-mkdir build && cd build
-cmake .. -DENABLE_EBPF_METRICS=ON
+mkdir -p build && cd build
+cmake -B. -S.. -DENABLE_EBPF_METRICS=ON
 make
 ```
+
+This build method uses the minimal BCC headers included in the project, so you don't need to install the full BCC tools package if you only want to build and run the application.
 
 #### Using BCC Submodule
 If you prefer to use the BCC git submodule instead of system packages:
 ```bash
 ./build_bcc_submodule.sh
-mkdir build && cd build
-cmake .. -DENABLE_EBPF_METRICS=ON
+mkdir -p build && cd build
+cmake -B. -S.. -DENABLE_EBPF_METRICS=ON
 make
 ```
 
