@@ -125,11 +125,34 @@ Running test with reno (Bandwidth: 50 Mbps, Latency: 20 ms)
 
 ## Results
 
-After running tests, two CSV files are generated:
+After running tests, several CSV files are generated:
 - `detailed_metrics.csv`: Contains detailed metrics for each test case
 - `algorithm_comparison.csv`: Contains summary statistics comparing algorithms
+- `throughput_vs_bandwidth.csv`: Contains throughput data organized for plotting
+- `latency_vs_bandwidth.csv`: Contains latency data organized for plotting
 
 For more advanced eBPF metrics, see the eBPF-specific CSV files generated during tests.
+
+### Visualizing Results
+
+The project includes a Python script to generate comprehensive comparison plots:
+
+```bash
+# Install visualization dependencies
+pip3 install pandas matplotlib numpy
+
+# Run the plotting script
+python3 src/plot_comparison.py
+
+# Advanced usage with custom files and output directory
+python3 src/plot_comparison.py --throughput path/to/throughput.csv --latency path/to/latency.csv --output plots_dir
+```
+
+This will generate several visualization types in the `plots` directory:
+- Line charts comparing throughput across different algorithms at each latency level
+- Line charts comparing latency across different algorithms at each latency level
+- Heatmaps for each algorithm showing performance across bandwidth/latency combinations
+- Comparative heatmaps showing percentage differences between algorithm pairs
 
 ## eBPF Integration
 

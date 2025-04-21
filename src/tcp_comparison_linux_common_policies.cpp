@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <map>
 #include <sstream>
+#include <set>  // For unique algorithm tracking
 
 // Define EBPF feature flag
 #if defined(ENABLE_EBPF_METRICS)
@@ -74,6 +75,80 @@ private:
         
         csv_file.close();
         std::cout << "Detailed metrics saved to " << filename << std::endl;
+    }
+    
+    // Generate gnuplot-friendly CSV files for each metric
+    void save_gnuplot_friendly_metrics() {
+        // Throughput vs Bandwidth for each algorithm and latency
+        std::ofstream throughput_bw_file("throughput_vs_bandwidth.csv");
+        throughput_bw_file << "Bandwidth,Latency";
+        
+        // Get unique algorithms for column headers
+        std::set<std::string> algorithms;
+        for (const auto& [alg, _] : all_results) {
+            algorithms.insert(alg);
+        }
+        
+        // Add algorithm names as column headers
+        for (const auto& alg : algorithms) {
+            throughput_bw_file << "," << alg;
+        }
+        throughput_bw_file << "\n";
+        
+        // Group by bandwidth and latency
+        std::map<std::pair<int, int>, std::map<std::string, double>> grouped_data;
+        for (const auto& [alg, results] : all_results) {
+            for (const auto& metrics : results) {
+                std::pair<int, int> config = {metrics.bandwidth_config, metrics.latency_config};
+                grouped_data[config][alg] = metrics.throughput;
+            }
+        }
+        
+        // Write data rows
+        for (const auto& [config, alg_metrics] : grouped_data) {
+            throughput_bw_file << config.first << "," << config.second;
+            for (const auto& alg : algorithms) {
+                if (alg_metrics.find(alg) != alg_metrics.end()) {
+                    throughput_bw_file << "," << alg_metrics.at(alg);
+                } else {
+                    throughput_bw_file << ",";  // Empty if no data
+                }
+            }
+            throughput_bw_file << "\n";
+        }
+        
+        throughput_bw_file.close();
+        std::cout << "Gnuplot-friendly metrics saved to throughput_vs_bandwidth.csv" << std::endl;
+        
+        // Similar file for latency vs bandwidth
+        std::ofstream latency_bw_file("latency_vs_bandwidth.csv");
+        latency_bw_file << "Bandwidth,Latency";
+        for (const auto& alg : algorithms) {
+            latency_bw_file << "," << alg;
+        }
+        latency_bw_file << "\n";
+        
+        // Write latency data
+        for (const auto& [config, alg_metrics] : grouped_data) {
+            latency_bw_file << config.first << "," << config.second;
+            for (const auto& alg : algorithms) {
+                if (alg_metrics.find(alg) != alg_metrics.end()) {
+                    // Store the latency value from original metrics
+                    for (const auto& metrics : all_results[alg]) {
+                        if (metrics.bandwidth_config == config.first && metrics.latency_config == config.second) {
+                            latency_bw_file << "," << metrics.latency;
+                            break;
+                        }
+                    }
+                } else {
+                    latency_bw_file << ",";  // Empty if no data
+                }
+            }
+            latency_bw_file << "\n";
+        }
+        
+        latency_bw_file.close();
+        std::cout << "Gnuplot-friendly metrics saved to latency_vs_bandwidth.csv" << std::endl;
     }
     
     // Generate a CSV with algorithm comparison summary
@@ -229,11 +304,13 @@ public:
     void save_results() {
         save_detailed_metrics("detailed_metrics.csv");
         save_algorithm_comparison("algorithm_comparison.csv");
+        save_gnuplot_friendly_metrics(); // Generate additional files for gnuplot
     }
     
     // Display available algorithms
     void show_available_algorithms() {
         std::cout << "Available congestion control algorithms:\n";
+        std::cout << "AVAILABLE TCP CONGESTION CONTROL POLICIES:\n";
         for (const auto& alg : available_algorithms) {
             std::cout << "- " << alg << std::endl;
         }
@@ -434,16 +511,25 @@ int main() {
     CongestionTester tester;
     tester.show_available_algorithms();
     
-    // Option 1: Test specific algorithms
+    // Option 1: Test specific algorithms with granular bandwidth increments for better gnuplot visualization
     std::vector<std::string> algorithms_to_test = {"cubic", "bbr", "reno"};
+    
+    // Create more granular bandwidth values for better comparison plots
+    std::vector<int> bandwidths = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200};
+    std::vector<int> latencies = {5, 20, 50, 100};
     
     for (const auto& alg : algorithms_to_test) {
         if (tester.set_congestion_algorithm(alg)) {
             std::cout << "Testing " << alg << "...\n";
-            // Run tests with different bandwidth and latency combinations
-            tester.run_test(30, 10, 5);   // 30 sec, 10Mbps, 5ms
-            tester.run_test(30, 50, 20);  // 30 sec, 50Mbps, 20ms
-            tester.run_test(30, 100, 100); // 30 sec, 100Mbps, 100ms
+            
+            // For each algorithm, test with all bandwidth and latency combinations
+            // This creates a comprehensive dataset for gnuplot comparison
+            for (const auto& bw : bandwidths) {
+                for (const auto& lat : latencies) {
+                    // Only run the test with lower duration to save time
+                    tester.run_test(20, bw, lat);  // 20 sec duration, varying bandwidth and latency
+                }
+            }
         }
     }
     
