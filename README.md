@@ -34,9 +34,26 @@ impacts throughput, latency, and overall network performance. In particular, the
 
 ### Building
 
+#### Standard Build
 ```bash
 mkdir build && cd build
 cmake ..
+make
+```
+
+#### Build with eBPF Support
+```bash
+mkdir build && cd build
+cmake .. -DENABLE_EBPF_METRICS=ON
+make
+```
+
+#### Using BCC Submodule
+If you prefer to use the BCC git submodule instead of system packages:
+```bash
+./build_bcc_submodule.sh
+mkdir build && cd build
+cmake .. -DENABLE_EBPF_METRICS=ON
 make
 ```
 
